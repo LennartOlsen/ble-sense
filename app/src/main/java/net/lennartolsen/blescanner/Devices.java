@@ -6,6 +6,7 @@ package net.lennartolsen.blescanner;
 
 public class Devices {
     private String id;
+    private String deviceName;
     private String roomNumber;
 
     public Devices(){
@@ -21,6 +22,13 @@ public class Devices {
 
     public String getRoomNumber() {
         return roomNumber;
+    }
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
     }
 
     public void setId(String id) {
