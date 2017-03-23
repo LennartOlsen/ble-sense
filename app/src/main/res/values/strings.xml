@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">BleScanner</string>
+    <string name="remote_service_started">MESSENGER_SERVICE_STARTED</string>
+    <string name="remote_service_stopped">MESSENGER_SERVICE_STOPPED</string>
+    <string name="local_service_label">LOCAL SERVICE LABEL BRAH</string>
+    <string name="remote_service_connected">REMOTE SERVICE CONNECTED</string>
+    <string name="remote_service_disconnected">REMOTE SERVICE DISCONNECTED</string>
 </resources>
