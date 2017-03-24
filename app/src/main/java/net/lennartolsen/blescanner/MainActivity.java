@@ -14,8 +14,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.kontakt.sdk.android.common.KontaktSDK;
+
 import net.lennartolsen.blescanner.services.BTService;
 import net.lennartolsen.blescanner.services.GPSService;
+import net.lennartolsen.blescanner.services.KontaktService;
 
 import java.util.*;
 
@@ -25,15 +28,16 @@ public class MainActivity extends AppCompatActivity {
     Button debugButton;
 
     GPSService gpsService;
-    BTService btService;
+    KontaktService kontaktService;
 
     boolean isGPSBound = false;
-    boolean isBTBound = false;
+    boolean isKontaktBound = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        KontaktSDK.initialize(this);
 
         mCallbackText = (TextView) findViewById(R.id.debugView);
         debugButton = (Button) findViewById(R.id.button);
@@ -44,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         if( handlePermissions() ) {
-            if(this.btService == null){startBTService();}
+            if(this.kontaktService == null){startKontaktService();}
             if(this.gpsService == null){startGPSService();}
         }
     }
@@ -63,14 +67,18 @@ public class MainActivity extends AppCompatActivity {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED||
             ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED) {
             Log.e("World", "UNGRANTED");
             ActivityCompat.requestPermissions(this,
                     new String[]{
                             android.Manifest.permission.ACCESS_FINE_LOCATION,
                             android.Manifest.permission.ACCESS_COARSE_LOCATION,
                             Manifest.permission.BLUETOOTH,
-                            Manifest.permission.BLUETOOTH_ADMIN
+                            Manifest.permission.BLUETOOTH_ADMIN,
+                            Manifest.permission.INTERNET,
+                            Manifest.permission.ACCESS_NETWORK_STATE
                     },
                     1);
             consent = false;
@@ -94,8 +102,10 @@ public class MainActivity extends AppCompatActivity {
         if (allowed.contains(Manifest.permission.ACCESS_COARSE_LOCATION) &&
                 allowed.contains(Manifest.permission.ACCESS_FINE_LOCATION) &&
                 allowed.contains(Manifest.permission.BLUETOOTH) &&
-                allowed.contains(Manifest.permission.BLUETOOTH_ADMIN)) {
-            startBTService();
+                allowed.contains(Manifest.permission.BLUETOOTH_ADMIN)&&
+                allowed.contains(Manifest.permission.INTERNET) &&
+                allowed.contains(Manifest.permission.ACCESS_NETWORK_STATE)) {
+            startKontaktService();
             startGPSService();
         }
     }
@@ -103,9 +113,9 @@ public class MainActivity extends AppCompatActivity {
     private void startGPSService() {
         bindService(new Intent(this, GPSService.class), gpsServiceConnection, Context.BIND_AUTO_CREATE);
     }
-    private void startBTService() {
+    private void startKontaktService() {
         Log.e("WORLD", "try to bind");
-        bindService(new Intent(this, BTService.class), btServiceConnection, Context.BIND_AUTO_CREATE);
+        bindService(new Intent(this, KontaktService.class), kontaktServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
 
@@ -158,15 +168,15 @@ public class MainActivity extends AppCompatActivity {
     };
 
     /** Defines callbacks for service binding, passed to bindService() */
-    private ServiceConnection btServiceConnection = new ServiceConnection() {
+    private ServiceConnection kontaktServiceConnection = new ServiceConnection() {
 
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
-            Log.e("WORLD", "BT SERVICE CONNECTED");
+            Log.e("WORLD", "KONTAKTSERVICE SERVICE CONNECTED");
             // We've bound to LocalService, cast the IBinder and get LocalService instance
-            BTService.LocalBinder binder = (BTService.LocalBinder) service;
-            btService = binder.getService();
-            isBTBound = true;
+            KontaktService.LocalBinder binder = (KontaktService.LocalBinder) service;
+            kontaktService = binder.getService();
+            isKontaktBound = true;
 
             // We want to monitor the service for as long as we are
             // connected to it.
@@ -181,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
-            isBTBound = false;
+            isKontaktBound = false;
         }
     };
 }

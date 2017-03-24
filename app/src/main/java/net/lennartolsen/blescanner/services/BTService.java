@@ -19,7 +19,7 @@ import java.util.ArrayList;
 
 public class BTService extends Service {
     private final String TAG = "BTService";
-    ArrayList<String> deviceList;
+    ArrayList<BluetoothDevice> deviceList = new ArrayList<>();
 
     BluetoothAdapter mBluetoothAdapter = null;
 
@@ -59,9 +59,11 @@ public class BTService extends Service {
             // New device found
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress(); // MAC address
+                if(device != null) {
+                    device.fetchUuidsWithSdp();
+                    Log.e(TAG, "Found : " + device.toString());
+                    deviceList.add(device);
+                }
 
                 /*if(deviceName != null){
                     deviceList.add(deviceName + " : " + rssi + "dbm");
@@ -69,16 +71,23 @@ public class BTService extends Service {
                     deviceList.add(deviceHardwareAddress + " : " + rssi + "dbm");
                 }*/
 
-                Log.e(TAG, "BT device Signal: " + rssi + "dbm");
-                Log.e(TAG, "BT device: " + deviceName + deviceHardwareAddress);
 
-                /** TODO : Handle found devices **/
+                /* TODO : Handle found devices **/
             }
 
             // scanning ended
             if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
                 Log.e(TAG, "Search ended");
                 //mBluetoothAdapter.startDiscovery();
+
+                for (int i = deviceList.size() - 1; i > 0; i--) {
+                    BluetoothDevice device = deviceList.get(i);
+                    device.fetchUuidsWithSdp();
+                    Log.e(TAG, "Device list : " + i + " " + device.toString());
+                    if(device.getUuids() != null){
+                        Log.e(TAG, "Device UUIDs " + device.getUuids().toString());
+                    }
+                }
             }
         }
     };
@@ -102,7 +111,7 @@ public class BTService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.e(TAG, "Bound Yo");
+        Log.e(TAG, "Bound");
         return binder;
     }
 
