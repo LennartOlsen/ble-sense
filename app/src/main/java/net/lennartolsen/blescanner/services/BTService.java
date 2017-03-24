@@ -11,6 +11,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import net.lennartolsen.blescanner.MyDBHandler;
+
 import java.util.ArrayList;
 
 /**
@@ -20,6 +22,7 @@ import java.util.ArrayList;
 public class BTService extends Service {
     private final String TAG = "BTService";
     ArrayList<BluetoothDevice> deviceList = new ArrayList<>();
+    private String roomNum;
 
     BluetoothAdapter mBluetoothAdapter = null;
 
@@ -64,6 +67,7 @@ public class BTService extends Service {
                     Log.e(TAG, "Found : " + device.toString());
                     deviceList.add(device);
                 }
+
 
                 /*if(deviceName != null){
                     deviceList.add(deviceName + " : " + rssi + "dbm");

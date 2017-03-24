@@ -3,6 +3,7 @@ package net.lennartolsen.blescanner;
 import android.Manifest;
 import android.content.*;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
 import android.os.*;
 import android.support.v4.app.ActivityCompat;
@@ -30,6 +31,8 @@ public class MainActivity extends AppCompatActivity {
     GPSService gpsService;
     KontaktService kontaktService;
 
+    MyDBHandler dbHandler;
+
     boolean isGPSBound = false;
     boolean isKontaktBound = false;
 
@@ -51,7 +54,52 @@ public class MainActivity extends AppCompatActivity {
             if(this.kontaktService == null){startKontaktService();}
             if(this.gpsService == null){startGPSService();}
         }
+        dbHandler = new MyDBHandler(this, null, null, 1);
+        if(dbHandler.checkIfEmpty()){
+            dbHandler.addDevice(new Devices("sx8Z","Atrie"));
+            dbHandler.addDevice(new Devices("5f4E","Studiezone"));
+            dbHandler.addDevice(new Devices("HwqA","U168"));
+            dbHandler.addDevice(new Devices("9N4C","U167"));
+            dbHandler.addDevice(new Devices("iqvD","Gang"));
+            dbHandler.addDevice(new Devices("QP9Y","U166"));
+            dbHandler.addDevice(new Devices("S5XN","U165"));
+            dbHandler.addDevice(new Devices("3rMl","Studiezone"));
+            dbHandler.addDevice(new Devices("gkKV","Studiezone"));
+            dbHandler.addDevice(new Devices("KdtM","U164"));
+            dbHandler.addDevice(new Devices("krQd","U163"));
+            dbHandler.addDevice(new Devices("1XIJ","Gang"));
+            dbHandler.addDevice(new Devices("LxPa","U162"));
+            dbHandler.addDevice(new Devices("Y2bm","U161"));
+            dbHandler.addDevice(new Devices("h6YJ","U160"));
+            dbHandler.addDevice(new Devices("F29K","Studiezone"));
+            dbHandler.addDevice(new Devices("z5gv","Trappe"));
+            dbHandler.addDevice(new Devices("Ras3","Atrie"));
+            dbHandler.addDevice(new Devices("Vkrs","Trappe"));
+            dbHandler.addDevice(new Devices("RPpW","Gang"));
+            dbHandler.addDevice(new Devices("3UUi","Gang"));
+            dbHandler.addDevice(new Devices("rSfe","Studiezone"));
+            dbHandler.addDevice(new Devices("koHK","U171"));
+            dbHandler.addDevice(new Devices("CffO","U170"));
+            dbHandler.addDevice(new Devices("NEcd","U177"));
+            dbHandler.addDevice(new Devices("dHSx","U176"));
+            dbHandler.addDevice(new Devices("n1hZ","Studiezone"));
+            dbHandler.addDevice(new Devices("0bNm","Studiezone"));
+            dbHandler.addDevice(new Devices("GZGz","U172"));
+            dbHandler.addDevice(new Devices("76bB","U173"));
+            dbHandler.addDevice(new Devices("1AGP","U174"));
+            dbHandler.addDevice(new Devices("RN94","U175"));
+            dbHandler.addDevice(new Devices("6qXL","Studiezone"));
+            dbHandler.addDevice(new Devices("m6ZW","Trappe"));
+            dbHandler.addDevice(new Devices("Eh6f","Atrie"));
+            dbHandler.addDevice(new Devices("23ip","Gang"));
+            dbHandler.addDevice(new Devices("oPSB","U182"));
+            dbHandler.addDevice(new Devices("bR6t","U183"));
+            dbHandler.addDevice(new Devices("FNWl","Atrie"));
+            dbHandler.addDevice(new Devices("zhSV","U181"));
+            dbHandler.addDevice(new Devices("64AZ","U180"));
+        }
     }
+
 
     void handleNewLocation(Location l){
         mCallbackText.setText("Received from service: " + l.toString());
