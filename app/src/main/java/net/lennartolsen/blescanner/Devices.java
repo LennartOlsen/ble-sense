@@ -5,19 +5,15 @@ package net.lennartolsen.blescanner;
  */
 
 public class Devices {
-    private String id;
     private String deviceName;
     private String roomNumber;
 
     public Devices(){
 
     }
-    public Devices(String _id, String _roomNumber){
-        this.id = _id;
+    public Devices(String _deviceName, String _roomNumber){
+        this.deviceName = _deviceName;
         this.roomNumber = _roomNumber;
-    }
-    public String getId() {
-        return id;
     }
 
     public String getRoomNumber() {
@@ -29,10 +25,6 @@ public class Devices {
 
     public void setDeviceName(String deviceName) {
         this.deviceName = deviceName;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public void setRoomNumber(String roomNumber) {

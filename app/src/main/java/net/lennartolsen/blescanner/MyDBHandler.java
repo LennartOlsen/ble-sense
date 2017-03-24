@@ -32,10 +32,83 @@ public class MyDBHandler extends SQLiteOpenHelper {
                 COLUMN_ROOMNUMBER + " TEXT " +
                 ");";
         db.execSQL(query);
+
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_DEVICES);
+        onCreate(db);
+    }
+
+    // Add new row to the database
+    public void addDevice(Devices device){
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_DEVICENAME, device.getDeviceName());
+        values.put(COLUMN_ROOMNUMBER, device.getRoomNumber());
+        SQLiteDatabase db = getWritableDatabase();
+        db.insert(TABLE_DEVICES, null, values);
+        db.close();
+    }
+
+    public boolean checkIfEmpty(){
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor mCursor = db.rawQuery("SELECT * FROM " + TABLE_DEVICES, null);
+        boolean empty = false;
+        if(mCursor.getCount() == 0){
+            empty = true;
+        }
+        return empty;
+    }
+
+
+    public String getRoomNumberOfDevice(String aDeviceName){
+        String roomNumberResult = "";
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT * FROM " + TABLE_DEVICES + " WHERE " + COLUMN_DEVICENAME + "=\"" +
+                aDeviceName + "\"";
+
+        // Cursor point to a location in your results
+        Cursor c = db.rawQuery(query, null);
+        // Move to the first row in your results
+        c.moveToFirst();
+
+        while(!c.isAfterLast()){
+            if(c.getString(c.getColumnIndex("roomNumber")) != null){
+                roomNumberResult = c.getString(c.getColumnIndex("roomNumber"));
+            }
+        }
+        db.close();
+        return roomNumberResult;
 
     }
+
+    // Delete a device from db
+    public void deleteDevice(String deviceName){
+        SQLiteDatabase db = getWritableDatabase();
+        db.execSQL("DELETE FROM " + TABLE_DEVICES + " WHERE " + COLUMN_DEVICENAME + "=\"" +
+        deviceName + "\"");
+    }
+
+    // Print out the database as a string
+    public String databaseToString(){
+        String dbString = "";
+        SQLiteDatabase db = getWritableDatabase();
+        String query = "SELECT * FROM " + TABLE_DEVICES + " WHERE 1";
+
+        // Cursor point to a location in your results
+        Cursor c = db.rawQuery(query, null);
+        // Move to the first row in your results
+        c.moveToFirst();
+
+        while(!c.isAfterLast()){
+            if(c.getString(c.getColumnIndex("deviceName")) != null){
+                dbString += c.getString(c.getColumnIndex("deviceName"));
+                dbString += "\n";
+            }
+        }
+        db.close();
+        return dbString;
+    }
+
 }
