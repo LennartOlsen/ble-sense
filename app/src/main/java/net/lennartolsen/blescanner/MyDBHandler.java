@@ -51,6 +51,8 @@ public class MyDBHandler extends SQLiteOpenHelper {
         db.close();
     }
 
+
+
     public boolean checkIfEmpty(){
         SQLiteDatabase db = getReadableDatabase();
         Cursor mCursor = db.rawQuery("SELECT * FROM " + TABLE_DEVICES, null);

@@ -11,6 +11,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import net.lennartolsen.blescanner.MyDBHandler;
+
 import java.util.ArrayList;
 
 /**
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 
 public class BTService extends Service {
     private final String TAG = "BTService";
+    private String roomNum;
     ArrayList<String> deviceList;
 
     BluetoothAdapter mBluetoothAdapter = null;
@@ -62,6 +65,7 @@ public class BTService extends Service {
                 int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
                 String deviceName = device.getName();
                 String deviceHardwareAddress = device.getAddress(); // MAC address
+
 
                 /*if(deviceName != null){
                     deviceList.add(deviceName + " : " + rssi + "dbm");
