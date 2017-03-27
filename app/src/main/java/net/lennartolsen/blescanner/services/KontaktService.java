@@ -2,6 +2,8 @@ package net.lennartolsen.blescanner.services;
 
 import android.app.Service;
 import android.content.Intent;
+import android.nfc.Tag;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -25,6 +27,9 @@ import com.kontakt.sdk.android.common.profile.IBeaconDevice;
 import com.kontakt.sdk.android.common.profile.IBeaconRegion;
 import com.kontakt.sdk.android.common.profile.IEddystoneNamespace;
 
+import net.lennartolsen.blescanner.Device;
+import net.lennartolsen.blescanner.MyDBHandler;
+
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -32,10 +37,15 @@ import java.util.concurrent.TimeUnit;
 public class KontaktService extends Service {
     private final static String TAG = "KontaktService";
 
+    private final static int DEVICE_LIFE_TIME = 90; /* Seconds */
+
     private ProximityManager proximityManager;
 
-    public KontaktService() {
-    }
+    private boolean firstRun = true;
+
+    private ArrayList<Device> deviceList = new ArrayList<>();
+
+    MyDBHandler dbHandler;
 
     private void setupProximityManager() {
         proximityManager = ProximityManagerFactory.create(this);
@@ -83,11 +93,9 @@ public class KontaktService extends Service {
             public void onServiceReady() {
                 //Check if proximity manager is already scanning
                 if (proximityManager.isScanning()) {
-                    Log.e(TAG, "Already Scanning");
                     return;
                 }
                 proximityManager.startScanning();
-                Log.e(TAG, "Scannning");
             }
         });
     }
@@ -95,7 +103,6 @@ public class KontaktService extends Service {
         //Stop scanning if scanning is in progress
         if (proximityManager.isScanning()) {
             proximityManager.stopScanning();
-            Log.e(TAG, "Scanning stopped");
         }
     }
     private SpaceListener createSpaceListener() {
@@ -121,13 +128,103 @@ public class KontaktService extends Service {
             }
         };
     }
+
     protected IBeaconListener createIBeaconListener() {
         return new SimpleIBeaconListener() {
             @Override
             public void onIBeaconDiscovered(IBeaconDevice ibeacon, IBeaconRegion region) {
                 Log.i(TAG, "IBeacon discovered: " + ibeacon.toString());
+                String uuid = ibeacon.getUniqueId();
+                if(uuid != null){
+                    String roomNo = dbHandler.getRoomNumberOfDevice(uuid);
+                    if(roomNo != null){
+                        Device d = new Device(uuid, roomNo);
+                        d.setSignalStrength(ibeacon.getRssi());
+                        d.setBirth((int) (System.currentTimeMillis() / 1000L));
+                        addDeviceToList(d);
+                        cleanUpList();
+
+                        new Shipper().execute();
+                    }
+                }
+
             }
         };
+    }
+
+    protected void addDeviceToList(Device d){
+        /* Overwrite the position if the id is already there **/
+        for (int i = deviceList.size() - 1; i >= 0; i--) {
+            Device currentDevice = deviceList.get(i);
+            if(currentDevice.getDeviceName().equals(d.getDeviceName())){
+                deviceList.remove(i);
+            }
+        }
+        for (int i = deviceList.size() - 1; i >= 0; i--) {
+            Device currentDevice = deviceList.get(i);
+            /** List is empty **/
+            if(currentDevice == null) {
+                deviceList.add(i, d);
+                return;
+            }
+            /* Check if the signal strength is between this and the next one*/
+            if(d.getSignalStrength() <= currentDevice.getSignalStrength()){
+                /** If next is not there we just add it at that position */
+                if(i+1 > deviceList.size() - 1){
+                    Log.e(TAG, "Next is Null - adding at " + (i+1));
+                    deviceList.add(i+1, d);
+                    return;
+                }
+                /** If in between we add it **/
+                if(d.getSignalStrength() >= deviceList.get(i+1).getSignalStrength()){
+                    Log.e(TAG, "Is inbetween adding at " + (i+1));
+                    deviceList.add(i+1, d);
+                    return;
+                }
+                /* Else do the next one */
+            }
+        }
+        /** If never added we assume that the adding device has the greatest signal strength **/
+        deviceList.add(0, d);
+    }
+    /** Removes every device that is older than DEVICE_LIFE_TIME **/
+    private void cleanUpList(){
+        for (int i = deviceList.size() - 1; i >= 0; i--) {
+            Device currentDevice = deviceList.get(i);
+            if((int) (System.currentTimeMillis() / 1000L) - currentDevice.getBirth() > DEVICE_LIFE_TIME){
+                deviceList.remove(i);
+            }
+        }
+    }
+
+    private class Shipper extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... aVoid) {
+            Log.e(TAG, "Doing in the background");
+            try {
+                if(!firstRun){
+                    Thread.sleep(500);
+                }
+                firstRun = false;
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            Message msg = Message.obtain(null, MSG_NEW_BLUETOOTH_LIST);
+            msg.obj = KontaktService.this.deviceList;
+            Log.e(TAG, "Sending shiiiit");
+            try {
+                KontaktService.this.mMessenger.send(msg);
+            } catch (RemoteException e){
+                Log.e(TAG, e.toString());
+            }
+        }
     }
 
     @Override
@@ -141,6 +238,8 @@ public class KontaktService extends Service {
         setupSpaces();
 
         startScanning();
+
+        dbHandler = new MyDBHandler(this, null, 1);
     }
 
     @Override
@@ -154,6 +253,9 @@ public class KontaktService extends Service {
     public class LocalBinder extends Binder {
         public KontaktService getService() {
             return KontaktService.this;
+        }
+        public IBinder getMessageBinder() {
+            return mMessenger.getBinder();
         }
     }
 
@@ -172,16 +274,9 @@ public class KontaktService extends Service {
     public static final int MSG_UNREGISTER_CLIENT = 2;
 
     /**
-     * Command to service to set a new value.  This can be sent to the
-     * service to supply a new value, and will be sent by the service to
-     * any registered clients with the new value.
-     */
-    public static final int MSG_SET_VALUE = 3;
-
-    /**
      * Command to send a new location
      */
-    public static final int MSG_NEW_LOCATION = 4;
+    public static final int MSG_NEW_BLUETOOTH_LIST = 21;
 
     int mValue = 0;
     ArrayList<Messenger> mClients = new ArrayList<>();
@@ -196,14 +291,9 @@ public class KontaktService extends Service {
                 case MSG_UNREGISTER_CLIENT:
                     mClients.remove(msg.replyTo);
                     break;
-                case MSG_SET_VALUE:
-                    mValue = msg.arg1;
+                case MSG_NEW_BLUETOOTH_LIST :
                     shipMessageToClients(Message.obtain(null,
-                            MSG_SET_VALUE, mValue, 0));
-                    break;
-                case MSG_NEW_LOCATION :
-                    shipMessageToClients(Message.obtain(null,
-                            MSG_NEW_LOCATION, msg.obj));
+                            MSG_NEW_BLUETOOTH_LIST, msg.obj));
                 default:
                     super.handleMessage(msg);
             }

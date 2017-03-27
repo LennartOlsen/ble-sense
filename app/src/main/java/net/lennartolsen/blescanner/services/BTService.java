@@ -36,7 +36,7 @@ public class BTService extends Service {
 
     @Override
     public void onCreate(){
-        Log.e(TAG, "Looking for BT Devices");
+        Log.e(TAG, "Looking for BT Device");
         // Setup broadcast receiver for device detection (scan for devices)
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
